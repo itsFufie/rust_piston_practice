@@ -2,10 +2,10 @@ extern crate glutin_window;
 extern crate graphics;
 extern crate opengl_graphics;
 extern crate piston;
-
+extern crate freetype as ft;
 
 use glutin_window::GlutinWindow as Window;
-use opengl_graphics::{Filter, GlGraphics, GlyphCache, OpenGL, TextureSettings};
+use opengl_graphics::{ Filter, GlGraphics, GlyphCache, OpenGL, TextureSettings};
 use piston::event_loop::{EventSettings, Events};
 use piston::input::{RenderArgs, RenderEvent, UpdateArgs, UpdateEvent};
 use piston::window::WindowSettings;
@@ -22,39 +22,29 @@ impl App {
     fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
 
-        const GREEN: [f32; 4] = [0.0, 0.6, 0.0, 1.0];
+        const _GREEN: [f32; 4] = [0.0, 0.6, 0.0, 1.0];
+        const GRAY: [f32; 4] = [0.5, 0.5, 0.5, 1.0];
         const _RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
         const _BLUE: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
         const BLACK: [f32; 4] = [0.0, 0.0, 0.1, 1.0];
 
         let my_input: &str = &self.text;
         let font: &str = "/usr/share/fonts/TTF/DejaVuSansMono.ttf";
-        let (mut x, y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
+        let freetype = ft::Library::init().unwrap();
+        let face = freetype.new_face(&font, 0).unwrap();
+        let _ = face.set_pixel_sizes(0, 48);
+
+        let texture_settings = TextureSettings::new().filter(Filter::Nearest);
+        let ref mut glyphs = GlyphCache::new(font, (), texture_settings)
+        .expect(&format!("failed to load font `{}`", font));
+
+
+        let (mut x_cords, mut y_cords) = (20.0, 50.0);
 
         self.gl.draw(args.viewport(), |c: Context, gl: &mut GlGraphics| {
             // Clear the screen.
-            clear(GREEN, gl);
-
-            // Draw a box rotating around the middle of the screen.
-            let texture_settings = TextureSettings::new().filter(Filter::Linear);
-
-            let mut glyphs = GlyphCache::new(font, (), texture_settings)
-                .expect(&format!("failed to load font `{:?}`", font));
-            
-            let text_image = Image::new_color(BLACK);
-
-            for ch in my_input.chars() {
-                x += 5.0;
-                if let Ok(character) = glyphs.character(32, ch) {
-                    let text_image = text_image.src_rect([
-                        character.atlas_offset[0],
-                        character.atlas_offset[1],
-                        character.atlas_size[0],
-                        character.atlas_size[1],
-                    ]);
-                    text_image.draw(character.texture, &c.draw_state, c.transform.trans(x,y), gl);
-                }
-            };
+            clear(GRAY, gl);
+            Text::new_color(BLACK, 32).draw(my_input, glyphs, &c.draw_state, c.transform.trans(x_cords, y_cords), gl).unwrap();
         });
     }
 
