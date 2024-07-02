@@ -39,7 +39,7 @@ impl App {
         .expect(&format!("failed to load font `{}`", font));
 
 
-        let (mut x_cords, mut y_cords) = (20.0, 50.0);
+        let (x_cords, y_cords) = (20.0, 50.0);
 
         self.gl.draw(args.viewport(), |c: Context, gl: &mut GlGraphics| {
             // Clear the screen.
@@ -59,9 +59,10 @@ impl App {
 }
 
 
-
+// The main function that every Rust application requires!
 fn main() {
-    // Change this to OpenGL::V2_1 if not working.
+
+    // Declarating the OpenGL Graphics
     let opengl = OpenGL::V3_2;
 
     // Create a Glutin window.
@@ -71,23 +72,29 @@ fn main() {
         .build()
         .unwrap();
 
-    // Create a new game and run it.
+    // Instanciating the App struct
     let mut app = App {
         gl: GlGraphics::new(opengl),
         rotation: 0.0,
         text: String::from(""),
     };
 
+    // Getting the Events data
     let mut events = Events::new(EventSettings::new().lazy(true));
+
+    // Iterating through the Events: render event, update event, input event, etc
     while let Some(e) = events.next(&mut window) {
+
+        // Render event
         if let Some(args) = e.render_args() {
             app.render(&args);
         }
 
+        // Update event
         if let Some(args) = e.update_args() {
             app.update(&args);
         }
-
+        // Text Input Event
         if let Some(text) = e.text_args() {
             app.update_text(&text)
         }
