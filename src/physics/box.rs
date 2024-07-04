@@ -1,6 +1,6 @@
 
 
-struct PhysicsBox {
+pub struct PhysicsBox {
     x_velocity: f64,
     y_velocity: f64,
     // coords

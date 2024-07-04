@@ -1,9 +1,6 @@
 [package]
-name = "rust_calculator"
+name = "rust_piston_practice"
 version = "0.1.0"
-
-[[bin]]
-name = "rust_calculator"
 
 [dependencies]
 piston = "1.0.0"

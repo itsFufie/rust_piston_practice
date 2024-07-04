@@ -3,10 +3,15 @@ extern crate graphics;
 extern crate opengl_graphics;
 extern crate piston;
 
-use input_box::InputBox;
-use opengl_graphics::{GlGraphics, GlyphCache};
+use glutin_window::{GlutinWindow, OpenGL};
+//use input_box::InputBox;
+use opengl_graphics::{Filter, GlGraphics, GlyphCache, TextureSettings};
 use piston::input::{ RenderArgs, UpdateArgs };
-use piston::{ Button,  MouseButton };
+use piston::{  Button, EventLoop, EventSettings, Events, MouseCursorEvent, PressEvent, RenderEvent, UpdateEvent, WindowSettings };
+
+#[path = "physics/game_objects.rs"] mod game_objects;
+
+use self::game_objects::GameObject;
 
 static BLACK: [f32; 4] = [0.0, 0.0, 0.1, 1.0];
 static _GREEN: [f32; 4] = [0.0, 0.6, 0.0, 1.0];
@@ -15,77 +20,91 @@ static _RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
 static _BLUE: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
 
 
+
 pub struct Game<'a> {
     pub gl: GlGraphics, // OpenGL drawing backend.
-    pub rotation: f64, // Rotation for the square.
-    pub reader: InputBox,
     pub cursor_pos: [f64; 2],
     pub glyph: GlyphCache<'a>,
+    pub window: GlutinWindow,
+    pub game_objects:  Vec<GameObject>,
 }
 
 impl Game<'_> {
+
+    pub fn new() -> Game<'static> {
+        
+        let graphics = OpenGL::V3_2;
+
+        let window: GlutinWindow = WindowSettings::new("Calculator", [200, 200])
+        .graphics_api(graphics)
+        .exit_on_esc(true)
+        .build()    
+        .unwrap();
+
+        // font delcaring
+        let font: &str = "/usr/share/fonts/TTF/DejaVuSansMono.ttf";
+        let texture_settings = TextureSettings::new().filter(Filter::Linear);
+        let glyphs = GlyphCache::new(font, (), texture_settings).expect(
+            &format!("failed to load font `{}`", font)
+        );
+
+        Game {
+            gl: GlGraphics::new(graphics),
+            cursor_pos: [0.0, 0.0],
+            glyph: glyphs,
+            window,
+            game_objects: vec!(),
+        }
+    }
+
     pub fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
-
-        let reader = &self.reader;
-        let ref mut glyph = self.glyph;
-        let input_reader_coords = reader.coords;
         let pos = self.cursor_pos;
 
         self.gl.draw(args.viewport(), |c: Context, gl: &mut GlGraphics| {
             // Clear the screen.
             clear(GRAY, gl);
-            // Draw text
-            Text::new_color(BLACK, 32)
-                .draw(&reader.value, glyph, &c.draw_state, c.transform.trans(20.0, 50.0), gl)
-                .unwrap();
-
-            // Draw the text box
-            Rectangle::new_border(reader.color, 0.8).draw(
-                input_reader_coords,
-                &c.draw_state,
-                c.transform.trans(0.0, 0.0),
-                gl
-            ); 
 
             Rectangle::new_border(BLACK, 1.0)
                 .draw([0.0,0.0, 10.0, 10.0], &c.draw_state, c.transform.trans(pos[0],pos[1]), gl);
-
         });
     }
 
-    pub fn update_text(&mut self, text: &String) {
-        if self.reader.selected {
-            self.reader.value.push_str(text);
+    pub fn game_loop(&mut self) {
+
+        let mut events = Events::new(EventSettings::new().ups(60));
+         // Iterating through the Events: render event, update event, input event, etc
+        while let Some(e) = events.next(&mut self.window) {
+
+        // Render event
+        if let Some(args) = e.render_args() {
+            self.render(&args);
+        }
+
+        // Update event
+        if let Some(args) = e.update_args() {
+            self.update(&args);
+        }
+
+        if let Some(args) = e.press_args() {
+            self.handle_press(args);
+        }
+
+        if let Some(pos) = e.mouse_cursor_args() {
+            self.set_last_cursor_position(pos);
+        }
+
         }
     }
 
+
     pub fn update(&mut self, args: &UpdateArgs) {
         // Rotate 2 radians per second.
-        self.rotation += 2.0 * args.dt;
+        println!("{:?}", args);
     }
 
     pub fn handle_press(&mut self, args: Button) {
         println!("{:?}", args);
-
-        if args == Button::Mouse(MouseButton::Left) {
-            let x = self.cursor_pos[0];
-            let y = self.cursor_pos[1];
-            if
-                x >= self.reader.coords[0] &&
-                x <= self.reader.coords[2] &&
-                y >= self.reader.coords[1] &&
-                y <= self.reader.coords[3]
-            {
-                self.reader.selected = true;
-            } else if self.reader.selected {
-                self.reader.selected = false;
-            }
-        }
-
-        if args == Button::Keyboard(piston::Key::Backspace) {
-            self.reader.value.pop();
-        }
     }
 
     pub fn set_last_cursor_position(&mut self, pos: [f64; 2]) {

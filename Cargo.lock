@@ -1451,7 +1451,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_calculator"
+name = "rust_piston_practice"
 version = "0.1.0"
 dependencies = [
  "piston",
