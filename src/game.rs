@@ -9,9 +9,11 @@ use opengl_graphics::{Filter, GlGraphics, GlyphCache, TextureSettings};
 use piston::input::{ RenderArgs, UpdateArgs };
 use piston::{  Button, EventLoop, EventSettings, Events, MouseCursorEvent, PressEvent, RenderEvent, UpdateEvent, WindowSettings };
 
-#[path = "physics/game_objects.rs"] mod game_objects;
+use game_objects::GameObject;
 
-use self::game_objects::GameObject;
+use crate::game_box::PhysicsBox;
+use crate::game_objects::Drawable;
+
 
 static BLACK: [f32; 4] = [0.0, 0.0, 0.1, 1.0];
 static _GREEN: [f32; 4] = [0.0, 0.6, 0.0, 1.0];
@@ -60,39 +62,54 @@ impl Game<'_> {
     pub fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
         let pos = self.cursor_pos;
+        let objects = &mut self.game_objects;
 
         self.gl.draw(args.viewport(), |c: Context, gl: &mut GlGraphics| {
             // Clear the screen.
             clear(GRAY, gl);
+            
+            for object in objects {
+                match object {
+                    GameObject::Box(object) => todo!(),
+                    GameObject::Circle(object) => object.draw(c, gl),
+                }
+            }
 
-            Rectangle::new_border(BLACK, 1.0)
-                .draw([0.0,0.0, 10.0, 10.0], &c.draw_state, c.transform.trans(pos[0],pos[1]), gl);
+            /* Rectangle::new_border(BLACK, 1.0)
+                .draw([0.0,0.0, 10.0, 10.0], &c.draw_state, c.transform.trans(pos[0],pos[1]), gl); */
         });
+    }
+
+    pub fn start_objects(&mut self) {
+        let circle = graphics::Ellipse::new(BLACK);
+        let physics_box = GameObject::Circle(PhysicsBox::new(true, circle, [0.0, 0.0, 20.0, 20.0]));
+        self.game_objects.push(physics_box);
     }
 
     pub fn game_loop(&mut self) {
 
+        self.start_objects();
         let mut events = Events::new(EventSettings::new().ups(60));
          // Iterating through the Events: render event, update event, input event, etc
         while let Some(e) = events.next(&mut self.window) {
 
-        // Render event
-        if let Some(args) = e.render_args() {
-            self.render(&args);
-        }
+            // Render event
+            if let Some(args) = e.render_args() {
+                self.render(&args);
+            }
 
-        // Update event
-        if let Some(args) = e.update_args() {
-            self.update(&args);
-        }
+            // Update event
+            if let Some(args) = e.update_args() {
+                self.update(&args);
+            }
 
-        if let Some(args) = e.press_args() {
-            self.handle_press(args);
-        }
+            if let Some(args) = e.press_args() {
+                self.handle_press(args);
+            }
 
-        if let Some(pos) = e.mouse_cursor_args() {
-            self.set_last_cursor_position(pos);
-        }
+            if let Some(pos) = e.mouse_cursor_args() {
+                self.set_last_cursor_position(pos);
+            }
 
         }
     }

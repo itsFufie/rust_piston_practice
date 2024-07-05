@@ -3,6 +3,8 @@ extern crate graphics;
 extern crate opengl_graphics;
 extern crate piston;
 
+#[path = "physics/game_objects.rs"] mod game_objects;
+#[path = "physics/game_box.rs"] mod game_box;
 mod input_box;
 mod game;
 
