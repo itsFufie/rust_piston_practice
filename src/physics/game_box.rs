@@ -26,12 +26,5 @@ impl<O> PhysicsBox<O> {
             corners,
         }
     }
-
-
-    pub fn update() {
-        
-    }
-
-
 }
 

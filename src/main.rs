@@ -7,6 +7,7 @@ extern crate piston;
 #[path = "physics/game_box.rs"] mod game_box;
 mod input_box;
 mod game;
+mod tile;
 
 use game::Game;
 
